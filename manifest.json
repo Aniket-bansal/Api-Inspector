@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Network to Code",
+  "version": "1.0.0",
+  "description": "Capture API requests from websites and generate fetch / axios code.",
+  "permissions": ["webRequest", "storage"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Network to Code"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "api-reverse-engineer@local.dev",
+      "strict_min_version": "109.0"
+    }
+  }
+}

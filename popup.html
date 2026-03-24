@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Network to Code</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="header">
+      <h1>API Capture</h1>
+      <button type="button" id="btn-clear" class="btn btn-ghost" title="Clear stored requests">Clear</button>
+    </header>
+
+    <p id="status" class="status" aria-live="polite"></p>
+
+    <section id="view-list" class="panel">
+      <div class="network-toolbar">
+        <button type="button" id="btn-toggle-filters" class="filters-toggle" aria-expanded="false" aria-controls="filter-search-panel">
+          <svg class="filters-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
+          </svg>
+          <span>Filters</span>
+          <span class="filters-chevron" aria-hidden="true">▾</span>
+        </button>
+        <div id="filter-search-panel" class="filter-search-panel hidden" role="search">
+          <input
+            type="search"
+            id="filter-search"
+            class="filter-search-input"
+            placeholder="Filter by URL or method…"
+            autocomplete="off"
+            spellcheck="false"
+          />
+        </div>
+        <div class="filter-pills-wrap" role="toolbar" aria-label="Request type">
+          <div id="filter-pills" class="filter-pills"></div>
+        </div>
+      </div>
+
+      <ul id="request-list" class="request-list"></ul>
+      <p id="empty-hint" class="empty-hint hidden">
+        No requests captured yet. Browse a site; open this popup again.
+      </p>
+      <p id="empty-filter-hint" class="empty-hint hidden">No requests match the current filters or search.</p>
+    </section>
+
+    <section id="view-detail" class="panel hidden">
+      <button type="button" id="btn-back" class="btn btn-ghost back-row">← Back</button>
+
+      <div class="detail-block">
+        <div class="detail-label">Method</div>
+        <div id="detail-method" class="detail-value mono"></div>
+      </div>
+      <div class="detail-block">
+        <div class="detail-label">URL</div>
+        <div id="detail-url" class="detail-value mono wrap"></div>
+      </div>
+      <div class="detail-block">
+        <div class="detail-label">Headers</div>
+        <pre id="detail-headers" class="detail-pre"></pre>
+      </div>
+      <div class="detail-block">
+        <div class="detail-label">Body</div>
+        <pre id="detail-body" class="detail-pre"></pre>
+      </div>
+
+      <div class="actions">
+        <button type="button" id="btn-fetch" class="btn btn-primary">Generate Fetch</button>
+        <button type="button" id="btn-axios" class="btn btn-secondary">Generate Axios</button>
+        <button type="button" id="btn-curl" class="btn btn-secondary">Generate cURL</button>
+      </div>
+
+      <div class="code-wrap">
+        <div class="code-toolbar">
+          <span class="code-label">Generated code</span>
+          <button type="button" id="btn-copy" class="btn btn-small">Copy</button>
+        </div>
+        <textarea id="code-output" class="code-output" readonly spellcheck="false"></textarea>
+      </div>
+    </section>
+
+    <script src="popup.js" type="module"></script>
+  </body>
+</html>
