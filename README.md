@@ -1,4 +1,4 @@
-# Network to Code
+# Api Inspector
 
 A cross-browser extension that captures API requests from websites and generates ready-to-use code snippets for **fetch**, **axios**, and **cURL**.
 
