@@ -1,186 +1,162 @@
 /**
  * Code generation: fetch(), axios, and curl snippets from captured request metadata.
+ *
+ * Phase 1: deleted dead wrapLongLines, fixed formatBodyLiteral, deduped helpers.
+ * Phase 2: each generator accepts { redactSecrets } opt.
+ * Phase 3 will split this file into utils/codegen/ (one file per target).
  */
 
-const MAX_LINE = 100;
+import { escapeSingleQuoted, escapeBashSingleQuoted } from "./text.js";
+import { FORBIDDEN_HEADERS, BODY_METHODS } from "./config.js";
+import { maskSecretsInHeaders } from "./redact.js";
 
 /**
- * Escape a string for use inside single-quoted JS string literals.
- * @param {string} s
+ * @typedef {{ redactSecrets?: boolean }} GenOptions
  */
-function escapeSingleQuoted(s) {
-  return s.replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/\r/g, "\\r").replace(/\n/g, "\\n");
+
+/**
+ * Apply redaction (if requested). Does not mutate the input.
+ *
+ * @param {{headers?: Array<{name:string,value:string}>}} req
+ * @param {GenOptions} [opts]
+ */
+function withRedaction(req, opts) {
+  if (!opts || !opts.redactSecrets) return req;
+  return { ...req, headers: maskSecretsInHeaders(req.headers) };
 }
 
 /**
- * Wrap a string for use inside bash/sh single quotes ('...').
- * @param {string} s
- */
-function escapeBashSingleQuoted(s) {
-  return `'${String(s).replace(/'/g, `'\\''`)}'`;
-}
-
-/**
- * Pretty-format JSON if parseable; otherwise return raw string.
- * @param {string} body
- */
-function formatBodyLiteral(body) {
-  if (body == null || body === "") {
-    return "null";
-  }
-  const trimmed = body.trim();
-  try {
-    const parsed = JSON.parse(trimmed);
-    const pretty = JSON.stringify(parsed, null, 2);
-    return pretty;
-  } catch {
-    return JSON.stringify(body);
-  }
-}
-
-/**
- * Build a plain headers object from captured header list (skips forbidden headers for fetch where noted).
+ * Build a plain headers object, skipping forbidden headers.
+ *
  * @param {Array<{name: string, value: string}>|undefined} headers
+ * @returns {Record<string, string>}
  */
 function headersToObject(headers) {
-  const out = {};
+  const out = /** @type {Record<string, string>} */ ({});
   if (!headers || !Array.isArray(headers)) return out;
-  const forbidden = new Set([
-    "content-length",
-    "host",
-    "connection",
-    "keep-alive",
-    "proxy-authenticate",
-    "proxy-authorization",
-    "te",
-    "trailer",
-    "transfer-encoding",
-    "upgrade",
-  ]);
   for (const h of headers) {
     if (!h || !h.name) continue;
-    const name = h.name.toLowerCase();
-    if (forbidden.has(name)) continue;
+    if (FORBIDDEN_HEADERS.has(h.name.toLowerCase())) continue;
     out[h.name] = h.value ?? "";
   }
   return out;
 }
 
 /**
- * Split long lines for readability in generated code.
- * @param {string} code
+ * Convert a captured body string into a JS expression for `body:` (fetch).
+ * - JSON: `JSON.stringify(<pretty>)`
+ * - Non-JSON: single-quoted, escaped JS string literal
+ * - Empty / GET / HEAD: "undefined"
+ *
+ * @param {string|null|undefined} body
+ * @param {string} method
+ * @returns {string}
  */
-function wrapLongLines(code) {
-  const lines = code.split("\n");
-  return lines
-    .map((line) => {
-      if (line.length <= MAX_LINE) return line;
-      return line;
-    })
-    .join("\n");
+function bodyToFetchLiteral(body, method) {
+  const hasBody = body != null && body !== "" && BODY_METHODS.has(method.toUpperCase());
+  if (!hasBody) return "undefined";
+  const trimmed = body.trim();
+  try {
+    return `JSON.stringify(${JSON.stringify(JSON.parse(trimmed), null, 2)})`;
+  } catch {
+    return `'${escapeSingleQuoted(body)}'`;
+  }
 }
 
 /**
- * @param {{ url: string, method: string, headers?: Array<{name: string, value: string}>, body?: string|null, bodyType?: string|null }} req
+ * Convert a captured body string into a JS expression for `data:` (axios).
+ * Axios auto-serializes objects, so JSON bodies are emitted as object literals.
+ *
+ * @param {string|null|undefined} body
+ * @param {string} method
+ * @returns {string|null}
+ */
+function bodyToAxiosDataLiteral(body, method) {
+  const hasBody = body != null && body !== "" && BODY_METHODS.has(method.toUpperCase());
+  if (!hasBody) return null;
+  const trimmed = body.trim();
+  try {
+    return JSON.stringify(JSON.parse(trimmed), null, 2);
+  } catch {
+    return `'${escapeSingleQuoted(body)}'`;
+  }
+}
+
+/**
+ * @param {{ url: string, method: string, headers?: Array<{name: string, value: string}>, body?: string|null }} req
+ * @param {GenOptions} [opts]
  * @returns {string}
  */
-export function generateFetch(req) {
+export function generateFetch(req, opts = {}) {
+  req = withRedaction(req, opts);
   const method = (req.method || "GET").toUpperCase();
   const url = req.url || "";
   const headerObj = headersToObject(req.headers);
-  const hasBody = req.body != null && req.body !== "" && ["POST", "PUT", "PATCH", "DELETE"].includes(method);
 
   const headerLines = Object.entries(headerObj)
     .map(([k, v]) => `    '${escapeSingleQuoted(k)}': '${escapeSingleQuoted(String(v))}',`)
     .join("\n");
 
-  const headersBlock =
-    Object.keys(headerObj).length > 0
-      ? `{\n${headerLines}\n  }`
-      : `{}`;
+  const headersBlock = Object.keys(headerObj).length > 0 ? `{\n${headerLines}\n  }` : `{}`;
 
-  let bodyExpr = "undefined";
-  if (hasBody) {
-    const pretty = formatBodyLiteral(req.body);
-    if (pretty.startsWith("{") || pretty.startsWith("[")) {
-      bodyExpr = `JSON.stringify(${pretty})`;
-    } else {
-      bodyExpr = pretty;
-    }
-  }
+  const bodyExpr = bodyToFetchLiteral(req.body, method);
 
   const optionsParts = [`method: '${method}'`, `headers: ${headersBlock}`];
-  if (hasBody) {
-    optionsParts.push(`body: ${bodyExpr}`);
-  }
+  if (bodyExpr !== "undefined") optionsParts.push(`body: ${bodyExpr}`);
   const options = `{\n  ${optionsParts.join(",\n  ")}\n}`;
 
-  const code = `const response = await fetch('${escapeSingleQuoted(url)}', ${options});
+  return `const response = await fetch('${escapeSingleQuoted(url)}', ${options});
 
 if (!response.ok) {
   throw new Error(\`HTTP \${response.status}\`);
 }
 
 const data = await response.json(); // or .text(), .blob(), etc.
-console.log(data);
-`;
-
-  return wrapLongLines(code.trim());
+console.log(data);`;
 }
 
 /**
  * @param {{ url: string, method: string, headers?: Array<{name: string, value: string}>, body?: string|null }} req
+ * @param {GenOptions} [opts]
  * @returns {string}
  */
-export function generateAxios(req) {
+export function generateAxios(req, opts = {}) {
+  req = withRedaction(req, opts);
   const method = (req.method || "GET").toUpperCase();
   const url = req.url || "";
   const headerObj = headersToObject(req.headers);
-  const hasBody = req.body != null && req.body !== "" && ["POST", "PUT", "PATCH", "DELETE"].includes(method);
 
   const headerLines = Object.entries(headerObj)
     .map(([k, v]) => `    '${escapeSingleQuoted(k)}': '${escapeSingleQuoted(String(v))}',`)
     .join("\n");
 
-  const headersBlock =
-    Object.keys(headerObj).length > 0
-      ? `{\n${headerLines}\n  }`
-      : `{}`;
+  const headersBlock = Object.keys(headerObj).length > 0 ? `{\n${headerLines}\n  }` : `{}`;
 
-  let dataBlock = "";
-  if (hasBody) {
-    const pretty = formatBodyLiteral(req.body);
-    if (pretty.startsWith("{") || pretty.startsWith("[")) {
-      dataBlock = `,\n  data: ${pretty}`;
-    } else {
-      dataBlock = `,\n  data: ${pretty}`;
-    }
-  }
+  const dataExpr = bodyToAxiosDataLiteral(req.body, method);
+  const dataBlock = dataExpr !== null ? `,\n  data: ${dataExpr}` : "";
 
-  const code = `const { data } = await axios({
+  return `const { data } = await axios({
   method: '${method.toLowerCase()}',
   url: '${escapeSingleQuoted(url)}',
   headers: ${headersBlock}${dataBlock}
 });
 
-console.log(data);
-`;
-
-  return wrapLongLines(code.trim());
+console.log(data);`;
 }
 
 /**
  * Build a curl command (bash-friendly: single-quoted args, line continuations).
- * Uses --data-raw so values starting with @ are not treated as file paths.
  *
  * @param {{ url: string, method: string, headers?: Array<{name: string, value: string}>, body?: string|null }} req
+ * @param {GenOptions} [opts]
  * @returns {string}
  */
-export function generateCurl(req) {
+export function generateCurl(req, opts = {}) {
+  req = withRedaction(req, opts);
   const method = (req.method || "GET").toUpperCase();
   const url = req.url || "";
   const headerObj = headersToObject(req.headers);
-  const hasBody = req.body != null && req.body !== "" && ["POST", "PUT", "PATCH", "DELETE"].includes(method);
+  const hasBody = req.body != null && req.body !== "" && BODY_METHODS.has(method);
 
   const parts = [`curl -X ${method}`, escapeBashSingleQuoted(url)];
 
@@ -205,5 +181,5 @@ export function generateCurl(req) {
     .map((line, i, arr) => (i < arr.length - 1 ? `  ${line} \\` : `  ${line}`))
     .join("\n");
 
-  return wrapLongLines(`${head}\n${tail}`);
+  return `${head}\n${tail}`;
 }
