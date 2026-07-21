@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Api Inspector — Settings</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header class="page-header">
+        <h1>Api Inspector — Settings</h1>
+        <p class="subtitle">Tune capture, privacy, and code generation defaults.</p>
+      </header>
+
+      <form id="options-form">
+        <!-- Privacy -->
+        <section class="card">
+          <h2 class="card-title">Privacy &amp; secrets</h2>
+          <label class="field">
+            <input type="checkbox" id="redactSecretsOnCopy" />
+            <span>
+              <strong>Redact secrets when generating code</strong>
+              <small
+                >Mask <code>Authorization</code>, <code>Cookie</code>, and similar headers before
+                the snippet is rendered. Recommended for sharing.</small
+              >
+            </span>
+          </label>
+          <label class="field">
+            <input type="checkbox" id="redactSecretsOnDisplay" />
+            <span>
+              <strong>Redact secrets in the detail view</strong>
+              <small
+                >Mask secret header values on screen. Off by default — your own traffic is usually
+                safe to view.</small
+              >
+            </span>
+          </label>
+        </section>
+
+        <!-- Capture -->
+        <section class="card">
+          <h2 class="card-title">Capture &amp; storage</h2>
+          <label class="field">
+            <span>
+              <strong>Maximum stored requests</strong>
+              <small
+                >How many recent captures to keep in <code>storage.local</code>. Older entries are
+                dropped first.</small
+              >
+            </span>
+            <input type="range" id="maxStored" min="25" max="500" step="25" class="range" />
+            <output for="maxStored" id="maxStored-out" class="range-out"></output>
+          </label>
+          <label class="field">
+            <span>
+              <strong>Maximum body size (characters)</strong>
+              <small
+                >Hard cap for any single request or response body. Larger bodies are
+                truncated.</small
+              >
+            </span>
+            <input
+              type="range"
+              id="maxBodyChars"
+              min="10000"
+              max="1000000"
+              step="10000"
+              class="range"
+            />
+            <output for="maxBodyChars" id="maxBodyChars-out" class="range-out"></output>
+          </label>
+          <label class="field">
+            <input type="checkbox" id="showBadge" />
+            <span>
+              <strong>Show toolbar badge with capture count</strong>
+              <small
+                >A small numeric badge on the extension icon. Cleared when the popup opens.</small
+              >
+            </span>
+          </label>
+        </section>
+
+        <!-- Generators -->
+        <section class="card">
+          <h2 class="card-title">Code generators</h2>
+          <p class="card-help">
+            Choose which languages appear in the popup dropdown, and which one is selected by
+            default.
+          </p>
+          <fieldset class="fieldset" id="enabled-generators">
+            <legend>Enabled generators</legend>
+            <!-- populated by options.js -->
+          </fieldset>
+          <label class="field">
+            <span>
+              <strong>Default generator</strong>
+              <small>The language selected when the popup opens.</small>
+            </span>
+            <select id="defaultGenerator" class="select"></select>
+          </label>
+        </section>
+
+        <!-- Theme -->
+        <section class="card">
+          <h2 class="card-title">Theme</h2>
+          <label class="field">
+            <span>
+              <strong>Color theme</strong>
+              <small
+                >Dark (default), light, or follow your system. (Currently affects the options page
+                only — popup theming is a stretch goal.)</small
+              >
+            </span>
+            <select id="theme" class="select">
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+              <option value="system">Follow system</option>
+            </select>
+          </label>
+        </section>
+
+        <div class="actions">
+          <button type="submit" id="btn-save" class="btn btn-primary">Save changes</button>
+          <span id="status" class="status" aria-live="polite"></span>
+        </div>
+      </form>
+
+      <footer class="page-footer">
+        <p>
+          Everything is stored locally in your browser — nothing is ever sent anywhere. See
+          <a href="https://github.com/Aniket-bansal/Api-Inspector/blob/main/PRIVACY.md"
+            >the privacy policy</a
+          >.
+        </p>
+      </footer>
+    </main>
+
+    <script src="options.js" type="module"></script>
+  </body>
+</html>
