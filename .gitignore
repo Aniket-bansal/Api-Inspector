@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Build / packaging output
+dist/
+*.zip
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage/
+.nyc_output/
