@@ -46,6 +46,23 @@ body {
   letter-spacing: 0.02em;
 }
 
+.all-tabs-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  margin-right: 10px;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.all-tabs-toggle input {
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
 .status {
   margin: 0;
   padding: 6px 14px;
@@ -203,7 +220,9 @@ body {
   background: var(--surface);
   border: 1px solid var(--border);
   cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
 
 .request-item:hover {
@@ -244,6 +263,36 @@ body {
   color: var(--text);
   word-break: break-all;
   line-height: 1.35;
+}
+
+/* Status badge (response code) inside a list row */
+.status-pill {
+  flex-shrink: 0;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--muted);
+  background: #1a2332;
+  border: 1px solid var(--border);
+}
+
+.status-pill.status-2x {
+  color: #86efac;
+  border-color: #166534;
+}
+.status-pill.status-3x {
+  color: #93c5fd;
+  border-color: #1e40af;
+}
+.status-pill.status-4x {
+  color: #fbbf24;
+  border-color: #92400e;
+}
+.status-pill.status-5x {
+  color: var(--danger);
+  border-color: #7f1d1d;
 }
 
 .empty-hint {
@@ -302,6 +351,32 @@ body {
   flex-wrap: wrap;
   gap: 8px;
   margin: 14px 0 10px;
+  align-items: center;
+}
+
+.lang-select-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.lang-select {
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--text);
+  background: #111820;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 8px;
+  cursor: pointer;
+  outline: none;
+  max-width: 160px;
+}
+
+.lang-select:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.35);
 }
 
 .btn {
@@ -312,7 +387,9 @@ body {
   border: 1px solid transparent;
   padding: 8px 12px;
   cursor: pointer;
-  transition: opacity 0.15s ease, transform 0.1s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.1s ease;
 }
 
 .btn:active {
@@ -396,4 +473,185 @@ body {
   color: var(--text);
   background: #111820;
   outline: none;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Phase 2: redact toggle + badge                                             */
+/* -------------------------------------------------------------------------- */
+
+.redact-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  padding: 6px 10px;
+  font-size: 11px;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.redact-toggle input {
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.redact-toggle:hover {
+  color: var(--text);
+  border-color: var(--muted);
+}
+
+.redact-badge {
+  flex: 1;
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 500;
+  color: #f4f4ff;
+  background: #3730a3;
+  border-radius: 999px;
+  text-align: center;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Phase 4: status filter, response indicator, per-field copy, keyboard hints */
+/* -------------------------------------------------------------------------- */
+
+.status-pills {
+  margin-bottom: 4px;
+}
+
+.kbd-hint {
+  margin: 8px 4px 0;
+  font-size: 10px;
+  color: var(--muted);
+  opacity: 0.75;
+}
+
+.kbd-hint kbd,
+kbd {
+  display: inline-block;
+  padding: 1px 5px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text);
+  background: #1a2332;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  box-shadow: 0 1px 0 var(--border);
+}
+
+.request-item.has-response::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent2);
+  flex-shrink: 0;
+  margin-right: 2px;
+}
+
+.request-item.selected {
+  border-color: var(--accent);
+  background: #1e2a3d;
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.detail-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.copy-mini {
+  font-family: inherit;
+  font-size: 11px;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 1px 6px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition:
+    opacity 0.12s ease,
+    color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.copy-mini:hover {
+  opacity: 1;
+  color: var(--text);
+  border-color: var(--border);
+}
+
+/* Code panel: highlighted code overlay aligned with the readonly textarea */
+.code-wrap {
+  position: relative;
+}
+
+.code-highlight {
+  display: block;
+  width: 100%;
+  min-height: 160px;
+  max-height: 220px;
+  margin: 0;
+  padding: 10px;
+  border: none;
+  resize: vertical;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text);
+  background: #111820;
+  outline: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: auto;
+  pointer-events: none;
+  position: absolute;
+  inset: 30px 0 0 0; /* sit beneath the toolbar */
+  z-index: 1;
+}
+
+.code-output {
+  position: relative;
+  z-index: 2;
+  color: transparent;
+  caret-color: var(--text);
+  background: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.code-output::selection {
+  background: rgba(99, 102, 241, 0.35);
+}
+
+/* Highlighter token classes (used by utils/highlight.js) */
+.tok-keyword {
+  color: #c084fc;
+}
+.tok-string {
+  color: #86efac;
+}
+.tok-number {
+  color: #fbbf24;
+}
+.tok-comment {
+  color: #64748b;
+  font-style: italic;
+}
+.tok-flag {
+  color: #60a5fa;
+}
+.tok-fn {
+  color: #93c5fd;
 }
